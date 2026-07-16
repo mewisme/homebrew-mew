@@ -1,0 +1,107 @@
+name: Auto-update casks
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [sync-package]
+  schedule:
+    - cron: "0 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      OWNER: ${{ github.repository_owner }}
+      SYNC_NAME: ${{ github.event.client_payload.name || '' }}
+      SYNC_TAG: ${{ github.event.client_payload.tag || '' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Sync casks
+        run: |
+          if [ -n "$SYNC_NAME" ]; then
+            count=$(jq --arg name "$SYNC_NAME" '[.packages[] | select(.enabled == true and .name == $name)] | length' registry.json)
+            if [ "$count" -eq 0 ]; then
+              echo "::error::Package $SYNC_NAME not found or not enabled in registry.json"
+              exit 1
+            fi
+            jq_filter='.packages[] | select(.enabled == true and .name == $name)'
+            jq_args=(--arg name "$SYNC_NAME")
+          else
+            jq_filter='.packages[] | select(.enabled == true)'
+            jq_args=()
+          fi
+
+          while IFS= read -r pkg; do
+            name=$(echo "$pkg" | jq -r '.name')
+            asset=$(echo "$pkg" | jq -r '.asset')
+            repo="${OWNER}/${name}"
+            target="Casks/${asset}"
+
+            echo "::group::Syncing $name from $repo"
+            if [ -n "$SYNC_TAG" ]; then
+              release=$(curl -sfSL "https://api.github.com/repos/$repo/releases/tags/$SYNC_TAG") || {
+                echo "::error::Failed to fetch release $SYNC_TAG for $name ($repo)"
+                echo "::endgroup::"
+                continue
+              }
+            else
+              release=$(curl -sfSL "https://api.github.com/repos/$repo/releases/latest") || {
+                echo "::error::Failed to fetch latest release for $name ($repo)"
+                echo "::endgroup::"
+                continue
+              }
+            fi
+
+            tag=$(echo "$release" | jq -r '.tag_name')
+            url=$(echo "$release" | jq -r --arg asset "$asset" '.assets[] | select(.name == $asset) | .browser_download_url')
+
+            if [ -z "$url" ] || [ "$url" = "null" ]; then
+              echo "::error::Asset $asset not found in release $tag for $name"
+              echo "::endgroup::"
+              continue
+            fi
+
+            tmp=$(mktemp)
+            curl -sfSL "$url" -o "$tmp" || {
+              echo "::error::Failed to download $asset for $name"
+              rm -f "$tmp"
+              echo "::endgroup::"
+              continue
+            }
+
+            grep -q 'cask "' "$tmp" || {
+              echo "::error::Downloaded content is not a Homebrew cask for $name"
+              rm -f "$tmp"
+              echo "::endgroup::"
+              continue
+            }
+
+            version="${tag#v}"
+            manifest_version=$(grep -oE 'version "[^"]+"' "$tmp" | head -1 | cut -d'"' -f2)
+            if [ -n "$manifest_version" ] && [ "$manifest_version" != "$version" ]; then
+              echo "::warning::Cask version ($manifest_version) does not match release tag ($version) for $name"
+            fi
+
+            mkdir -p "$(dirname "$target")"
+            if cmp -s "$tmp" "$target" 2>/dev/null; then
+              echo "$target already up to date ($tag)"
+              rm -f "$tmp"
+            else
+              mv "$tmp" "$target"
+              echo "Updated $target to $tag"
+            fi
+            echo "::endgroup::"
+          done < <(jq -c "${jq_args[@]}" "$jq_filter" registry.json)
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/
+          git diff --staged --quiet && { echo "No cask changes"; exit 0; }
+          git commit -m "chore: sync homebrew casks"
+          git push
