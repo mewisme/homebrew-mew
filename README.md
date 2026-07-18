@@ -13,7 +13,7 @@ brew install --cask <package>
 
 | Package | Description |
 |---|---|
-| [agentrule](https://github.com/mewisme/agentrule) | CLI to install Cursor rule files (`.cursor/rules/*.mdc`) into a project |
+| [agentrule](https://github.com/mewisme/agentrule) | CLI to install agent instruction rules across Cursor, Claude, Codex, and more |
 
 ```bash
 brew install --cask agentrule
