@@ -13,10 +13,10 @@ brew install --cask <package>
 
 | Package | Description |
 |---|---|
-| [initrule](https://github.com/mewisme/initrule) | CLI to install Cursor rule files (`.cursor/rules/*.mdc`) into a project |
+| [agentrule](https://github.com/mewisme/agentrule) | CLI to install Cursor rule files (`.cursor/rules/*.mdc`) into a project |
 
 ```bash
-brew install --cask initrule
+brew install --cask agentrule
 ```
 
-Casks sync hourly from each package's GitHub release asset (`*.rb`).
+Casks sync daily from each package's GitHub release asset (`*.rb`).

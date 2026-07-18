@@ -18,7 +18,7 @@ User must give (or confirm):
 | `asset` | `<name>.rb` |
 | `enabled` | `true` |
 
-Package must already publish a Homebrew cask as a release asset (e.g. `initrule.rb` on `mewisme/initrule` releases). Autoupdate fetches from `https://github.com/<owner>/<name>/releases`.
+Package must already publish a Homebrew cask as a release asset (e.g. `agentrule.rb` on `mewisme/agentrule` releases). Autoupdate fetches from `https://github.com/<owner>/<name>/releases`.
 
 ## Checklist
 

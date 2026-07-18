@@ -1,8 +1,8 @@
 {
   "packages": [
     {
-      "name": "initrule",
-      "asset": "initrule.rb",
+      "name": "agentrule",
+      "asset": "agentrule.rb",
       "enabled": true
     }
   ]
