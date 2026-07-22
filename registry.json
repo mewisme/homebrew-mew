@@ -4,6 +4,11 @@
       "name": "agentrule",
       "asset": "agentrule.rb",
       "enabled": true
+    },
+    {
+      "name": "discloud",
+      "asset": "discloud.rb",
+      "enabled": true
     }
   ]
 }
