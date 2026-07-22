@@ -38,10 +38,14 @@ jobs:
           while IFS= read -r pkg; do
             name=$(echo "$pkg" | jq -r '.name')
             asset=$(echo "$pkg" | jq -r '.asset')
-            repo="${OWNER}/${name}"
-            target="Casks/${asset}"
+            # repo: GitHub repo slug when it differs from the package name (default: name)
+            repo_slug=$(echo "$pkg" | jq -r '.repo // .name')
+            repo="${OWNER}/${repo_slug}"
+            # local file uses package name; must match cask "..." token inside the asset
+            ext="${asset##*.}"
+            target="Casks/${name}.${ext}"
 
-            echo "::group::Syncing $name from $repo"
+            echo "::group::Syncing $name from $repo (asset $asset)"
             if [ -n "$SYNC_TAG" ]; then
               release=$(curl -sfSL "https://api.github.com/repos/$repo/releases/tags/$SYNC_TAG") || {
                 echo "::error::Failed to fetch release $SYNC_TAG for $name ($repo)"

@@ -6,8 +6,9 @@
       "enabled": true
     },
     {
-      "name": "discloud",
-      "asset": "discloud.rb",
+      "name": "discloud-cli",
+      "repo": "discloud-go",
+      "asset": "discloud-cli.rb",
       "enabled": true
     }
   ]
