@@ -4,22 +4,22 @@ cask "agentrule" do
 
   on_macos do
     on_intel do
-      sha256 "cedc07dfc83f4a93863a806defe158559fdb4ad08034aa5979e0eefe4a7a2cbf"
+      sha256 "8232f5db98132b53ea05b3efb85efb9d9ded9e09bb316c53900147f44438252f"
       url "https://github.com/mewisme/agentrule/releases/download/v#{version}/agentrule_#{version}_darwin_amd64.tar.gz"
     end
     on_arm do
-      sha256 "2aca4a8722e8f0b27f74723b74e5787c12fc152eb47e471084127672ba6f6aeb"
+      sha256 "ed9e48f2171e99fb6bace2530b06bfdb61703684125498f3054745bb7af6104c"
       url "https://github.com/mewisme/agentrule/releases/download/v#{version}/agentrule_#{version}_darwin_arm64.tar.gz"
     end
   end
 
   on_linux do
     on_intel do
-      sha256 "92515c372dbdc6dce9c7a9ce43e30e29f831b0f3a27ec3e6c72a4d37da20b0db"
+      sha256 "c70ca902e5339dffd1efe520c382030e7a77cb54332406a70b537b9a89c65844"
       url "https://github.com/mewisme/agentrule/releases/download/v#{version}/agentrule_#{version}_linux_amd64.tar.gz"
     end
     on_arm do
-      sha256 "3069616a81bf46a142cf07c9d388d89c21ffc7dea56c136507887040f476665e"
+      sha256 "c6c477ced21fa3c74cd73e0cc13747945a79061d0e94e497b0c5d0d29983e931"
       url "https://github.com/mewisme/agentrule/releases/download/v#{version}/agentrule_#{version}_linux_arm64.tar.gz"
     end
   end
