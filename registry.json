@@ -10,6 +10,11 @@
       "repo": "discloud-go",
       "asset": "discloud-cli.rb",
       "enabled": true
+    },
+    {
+      "name": "chatgpt-mcp",
+      "asset": "chatgpt-mcp.rb",
+      "enabled": true
     }
   ]
 }
