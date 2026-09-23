@@ -20,12 +20,32 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Register dispatched package
+        if: ${{ github.event_name == 'repository_dispatch' }}
+        run: |
+          if [ -z "$SYNC_NAME" ] || [ -z "$SYNC_TAG" ]; then
+            echo "::error::repository_dispatch requires client_payload.name and client_payload.tag"
+            exit 1
+          fi
+          if ! [[ "$SYNC_NAME" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+            echo "::error::Invalid package name: $SYNC_NAME"
+            exit 1
+          fi
+
+          count=$(jq --arg name "$SYNC_NAME" '[.packages[] | select(.name == $name)] | length' registry.json)
+          if [ "$count" -eq 0 ]; then
+            tmp=$(mktemp)
+            jq --arg name "$SYNC_NAME" '.packages += [{"name": $name, "asset": ($name + ".rb"), "enabled": true}]' registry.json > "$tmp"
+            mv "$tmp" registry.json
+            echo "Registered and enabled $SYNC_NAME"
+          fi
+
       - name: Sync casks
         run: |
           if [ -n "$SYNC_NAME" ]; then
             count=$(jq --arg name "$SYNC_NAME" '[.packages[] | select(.enabled == true and .name == $name)] | length' registry.json)
             if [ "$count" -eq 0 ]; then
-              echo "::error::Package $SYNC_NAME not found or not enabled in registry.json"
+              echo "::error::Package $SYNC_NAME is disabled in registry.json"
               exit 1
             fi
             jq_filter='.packages[] | select(.enabled == true and .name == $name)'
@@ -35,57 +55,67 @@ jobs:
             jq_args=()
           fi
 
+          fail_sync() {
+            echo "::error::$1"
+            if [ -n "$SYNC_NAME" ]; then
+              exit 1
+            fi
+          }
+
           while IFS= read -r pkg; do
             name=$(echo "$pkg" | jq -r '.name')
             asset=$(echo "$pkg" | jq -r '.asset')
-            # repo: GitHub repo slug when it differs from the package name (default: name)
             repo_slug=$(echo "$pkg" | jq -r '.repo // .name')
             repo="${OWNER}/${repo_slug}"
-            # local file uses package name; must match cask "..." token inside the asset
             ext="${asset##*.}"
             target="Casks/${name}.${ext}"
 
+            if ! [[ "$name" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || [ "$ext" != "rb" ]; then
+              fail_sync "Invalid registry entry for $name"
+              continue
+            fi
+
             echo "::group::Syncing $name from $repo (asset $asset)"
             if [ -n "$SYNC_TAG" ]; then
-              release=$(curl -sfSL "https://api.github.com/repos/$repo/releases/tags/$SYNC_TAG") || {
-                echo "::error::Failed to fetch release $SYNC_TAG for $name ($repo)"
+              if ! release=$(curl -sfSL "https://api.github.com/repos/$repo/releases/tags/$SYNC_TAG"); then
                 echo "::endgroup::"
+                fail_sync "Failed to fetch release $SYNC_TAG for $name ($repo)"
                 continue
-              }
+              fi
             else
-              release=$(curl -sfSL "https://api.github.com/repos/$repo/releases/latest") || {
-                echo "::error::Failed to fetch latest release for $name ($repo)"
+              if ! release=$(curl -sfSL "https://api.github.com/repos/$repo/releases/latest"); then
                 echo "::endgroup::"
+                fail_sync "Failed to fetch latest release for $name ($repo)"
                 continue
-              }
+              fi
             fi
 
             tag=$(echo "$release" | jq -r '.tag_name')
             url=$(echo "$release" | jq -r --arg asset "$asset" '.assets[] | select(.name == $asset) | .browser_download_url')
 
             if [ -z "$url" ] || [ "$url" = "null" ]; then
-              echo "::error::Asset $asset not found in release $tag for $name"
               echo "::endgroup::"
+              fail_sync "Asset $asset not found in release $tag for $name"
               continue
             fi
 
             tmp=$(mktemp)
-            curl -sfSL "$url" -o "$tmp" || {
-              echo "::error::Failed to download $asset for $name"
+            if ! curl -sfSL "$url" -o "$tmp"; then
               rm -f "$tmp"
               echo "::endgroup::"
+              fail_sync "Failed to download $asset for $name"
               continue
-            }
+            fi
 
-            grep -q 'cask "' "$tmp" || {
-              echo "::error::Downloaded content is not a Homebrew cask for $name"
+            if ! grep -q 'cask "' "$tmp"; then
               rm -f "$tmp"
               echo "::endgroup::"
+              fail_sync "Downloaded content is not a Homebrew cask for $name"
               continue
-            }
+            fi
 
             version="${tag#v}"
-            manifest_version=$(grep -oE 'version "[^"]+"' "$tmp" | head -1 | cut -d'"' -f2)
+            manifest_version=$(awk -F'"' '/^[[:space:]]*version "/ { print $2; exit }' "$tmp")
             if [ -n "$manifest_version" ] && [ "$manifest_version" != "$version" ]; then
               echo "::warning::Cask version ($manifest_version) does not match release tag ($version) for $name"
             fi
@@ -101,11 +131,63 @@ jobs:
             echo "::endgroup::"
           done < <(jq -c "${jq_args[@]}" "$jq_filter" registry.json)
 
+      - name: Update README
+        run: |
+          table_rows=$(mktemp)
+          installs=$(mktemp)
+
+          while IFS=$'\t' read -r name repo_slug; do
+            file="Casks/${name}.rb"
+            if [ ! -f "$file" ]; then
+              echo "::error::Enabled package $name is missing $file"
+              exit 1
+            fi
+
+            version=$(awk -F'"' '/^[[:space:]]*version "/ { print $2; exit }' "$file")
+            description=$(awk -F'"' '/^[[:space:]]*desc "/ { print $2; exit }' "$file")
+            [ -n "$version" ] || version="-"
+            [ -n "$description" ] || description="-"
+            description="${description//|/&#124;}"
+
+            printf '| [%s](https://github.com/%s/%s) | %s | %s |\n' "$name" "$OWNER" "$repo_slug" "$version" "$description" >> "$table_rows"
+            printf 'brew install --cask %s\n' "$name" >> "$installs"
+          done < <(jq -r '.packages[] | select(.enabled == true) | [.name, (.repo // .name)] | @tsv' registry.json | LC_ALL=C sort)
+
+          {
+            cat <<EOF
+# homebrew-mew
+
+Homebrew tap for [mewisme](https://github.com/mewisme) packages.
+
+## Install
+
+\`\`\`bash
+brew tap mewisme/mew
+brew install --cask <package>
+\`\`\`
+
+## Packages
+
+| Package | Version | Description |
+|---|---|---|
+EOF
+            cat "$table_rows"
+            printf '\n\`\`\`bash\n'
+            cat "$installs"
+            cat <<'EOF'
+\`\`\`
+
+Casks sync daily from each package's GitHub release asset (`*.rb`).
+EOF
+          } > README.md
+
+          rm -f "$table_rows" "$installs"
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Casks/
+          git add registry.json README.md Casks/
           git diff --staged --quiet && { echo "No cask changes"; exit 0; }
           git commit -m "chore: sync homebrew casks"
           git push

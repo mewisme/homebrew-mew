@@ -12,8 +12,8 @@
       "enabled": true
     },
     {
-      "name": "chatgpt-mcp",
-      "asset": "chatgpt-mcp.rb",
+      "name": "codemcp",
+      "asset": "codemcp.rb",
       "enabled": true
     }
   ]
