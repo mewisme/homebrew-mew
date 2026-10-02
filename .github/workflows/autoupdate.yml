@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OWNER: ${{ github.repository_owner }}
-      SYNC_NAME: ${{ github.event.client_payload.name }}
-      SYNC_TAG: ${{ github.event.client_payload.tag }}
+      SYNC_NAME: ${{ github.event.client_payload.name || '' }}
+      SYNC_TAG: ${{ github.event.client_payload.tag || '' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -155,30 +155,30 @@ jobs:
 
           {
             cat <<EOF
-# homebrew-mew
-
-Homebrew tap for [mewisme](https://github.com/mewisme) packages.
-
-## Install
-
-\`\`\`bash
-brew tap mewisme/mew
-brew install --cask <package>
-\`\`\`
-
-## Packages
-
-| Package | Version | Description |
-|---|---|---|
-EOF
+          # homebrew-mew
+          
+          Homebrew tap for [mewisme](https://github.com/mewisme) packages.
+          
+          ## Install
+          
+          \`\`\`bash
+          brew tap mewisme/mew
+          brew install --cask <package>
+          \`\`\`
+          
+          ## Packages
+          
+          | Package | Version | Description |
+          |---|---|---|
+          EOF
             cat "$table_rows"
             printf '\n\`\`\`bash\n'
             cat "$installs"
             cat <<'EOF'
-\`\`\`
-
-Casks sync daily from each package's GitHub release asset (`*.rb`).
-EOF
+          \`\`\`
+          
+          Casks sync daily from each package's GitHub release asset (`*.rb`).
+          EOF
           } > README.md
 
           rm -f "$table_rows" "$installs"
