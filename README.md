@@ -17,10 +17,10 @@ brew install --cask <package>
 | [codemcp](https://github.com/mewisme/codemcp) | 0.3.0 | A secure, workspace-bound MCP bridge connecting ChatGPT, Claude, and other AI agents to your machine. |
 | [discloud-cli](https://github.com/mewisme/discloud-go) | 0.3.6 | CLI client for DisCloud (Discord-backed file storage) |
 
-\`\`\`bash
+```bash
 brew install --cask agentrule
 brew install --cask codemcp
 brew install --cask discloud-cli
-\`\`\`
+```
 
 Casks sync daily from each package's GitHub release asset (`*.rb`).
