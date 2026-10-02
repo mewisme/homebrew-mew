@@ -161,10 +161,10 @@ jobs:
           
           ## Install
           
-          \`\`\`bash
+          ```bash
           brew tap mewisme/mew
           brew install --cask <package>
-          \`\`\`
+          ```
           
           ## Packages
           
@@ -172,10 +172,10 @@ jobs:
           |---|---|---|
           EOF
             cat "$table_rows"
-            printf '\n\`\`\`bash\n'
+            printf '\n```bash\n'
             cat "$installs"
             cat <<'EOF'
-          \`\`\`
+          ```
           
           Casks sync daily from each package's GitHub release asset (`*.rb`).
           EOF
