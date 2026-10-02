@@ -154,7 +154,7 @@ jobs:
           done < <(jq -r '.packages[] | select(.enabled == true) | [.name, (.repo // .name)] | @tsv' registry.json | LC_ALL=C sort)
 
           {
-            cat <<EOF
+            cat <<'EOF'
           # homebrew-mew
           
           Homebrew tap for [mewisme](https://github.com/mewisme) packages.
