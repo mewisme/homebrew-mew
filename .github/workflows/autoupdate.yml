@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OWNER: ${{ github.repository_owner }}
-      SYNC_NAME: ${{ github.event.client_payload.name || '' }}
-      SYNC_TAG: ${{ github.event.client_payload.tag || '' }}
+      SYNC_NAME: ${{ github.event.client_payload.name }}
+      SYNC_TAG: ${{ github.event.client_payload.tag }}
     steps:
       - uses: actions/checkout@v7
 
