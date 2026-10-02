@@ -4,7 +4,7 @@ cask "codemcp" do
 
   on_macos do
     on_intel do
-      sha256 "37758f1bedafe304388a72208ee33c28c9338157ecc4e0caf79565ea7966d1bf"
+      sha256 "984ae79acca15a7a4e46caa5a119326e34dabeb56470cac831306f27fb3ba8fd"
       url "https://github.com/mewisme/codemcp/releases/download/v#{version}/codemcp_darwin_amd64.tar.gz"
     end
     on_arm do
@@ -19,11 +19,11 @@ cask "codemcp" do
   end
   on_linux do
     on_arm do
-      sha256 "f894700e8ff597e17c568b85f3ad6e672df4cba420d240ab16b9692c9ef4a460"
+      sha256 "f80b00c7c126191c43887dbf7e1304b30268c20bb57901a24252d54cbc4cada3"
       url "https://github.com/mewisme/codemcp/releases/download/v#{version}/codemcp_linux_arm64.tar.gz"
     end
     on_intel do
-      sha256 "f34ce9d31f22a8b9b8dd7d360dcadf42de85ce6b1e5f8d5918cb2f2c5c0949e7"
+      sha256 "5c5d68fea5c5372b4aec4fa2852f70fce7f28ab697baee2b3e67449944f23fbf"
       url "https://github.com/mewisme/codemcp/releases/download/v#{version}/codemcp_linux_amd64.tar.gz"
     end
   end
